@@ -41,13 +41,14 @@ Route::middleware([SuperAdminMiddleware::class])->prefix('admin')->group(functio
     Route::get('/orders/details/{id}', [OrderController::class, 'showOrder'])->name('admin.orders.details');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.updateStatus');
 
-    // Routes for Products
+    // Routes for Products - FIXED
     Route::get('/products', [ProductController::class, 'adminview'])->name('admin.products');
     Route::get('/addproduct', [ProductController::class, 'create'])->name('admin.addproduct');
     Route::post('/addproduct', [ProductController::class, 'store'])->name('admin.addproduct.store');
     Route::get('/editproduct/{id}', [ProductController::class, 'edit'])->name('admin.editproduct');
     Route::put('/editproduct/{id}', [ProductController::class, 'update'])->name('admin.updateproduct');
-    Route::delete('/products/delete/{id}', [CategoryController::class, 'destroy'])->name('products.destroy');
+    // FIXED: Changed from CategoryController to ProductController
+    Route::delete('/products/delete/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
 
     // Routes for Categories
     Route::get('/categories', [CategoryController::class, 'adminview'])->name('category');

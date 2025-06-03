@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -51,10 +53,10 @@ class ProductController extends Controller
     ]);
 }
 
-    
-    
 
-    
+
+
+
 
 public function home(Request $request)
 {
@@ -95,8 +97,8 @@ public function adminview()
     $products = Product::paginate(9);
     $categories = Category::select('id', 'name')->get();
     $categoryMap = $categories->pluck('name', 'id');
-     
-  
+
+
 
     return view('admin.products', ['products' => $products, 'categoryMap' => $categoryMap, 'totalProducts' => Product::count()]);
 }
@@ -113,56 +115,102 @@ public function adminview()
     public function create()
     {
         $categories = Category::select('id','name')->get();
-        
+
 
         return view('admin.products.addproduct',['categories'=>$categories]);
     }
 
-   
+/**
+ * Store a newly created resource in storage.
+ */
+public function store(Request $request)
+{
+    // Debug: Log all incoming request data
+    Log::info('Store method called with data:', [
+        'all_data' => $request->all(),
+        'files' => $request->allFiles(),
+        'method' => $request->method(),
+        'content_type' => $request->header('Content-Type')
+    ]);
 
+    // More flexible validation with better error messages
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:255',
+        'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'quantity' => 'required|integer|min:0',
+        'price' => 'required|numeric|min:0',
+        'cost' => 'required|numeric|min:0', // Cost is required as per migration
+        'category_id' => 'required|integer|exists:categories,id', // Fixed field name
+        'description' => 'required|string|min:10',
+        'enabled' => 'boolean', // Made boolean not required as checkboxes may not be sent when unchecked
+    ]);
 
-
-
-
-
-
- /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'image' => 'required|image',
-            'quantity' => 'required|integer',
-            'price' => 'required|numeric',
-            'cost' => 'required|numeric',
-            'category' => 'required|integer|exists:categories,id',
-            'description' => 'required|string',
-            'enabled' => 'required|boolean',
+    if ($validator->fails()) {
+        Log::error('Validation failed:', [
+            'errors' => $validator->errors()->toArray(),
+            'input' => $request->all()
         ]);
-    
+
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput()
+            ->with('error', 'Please fix the validation errors below.');
+    }
+
+    try {
         $product = new Product();
-    
-        $product->name = $request->name;
-    
+
+        $product->name = $request->input('name');
+        $product->quantity = $request->input('quantity');
+        $product->price = $request->input('price');
+        $product->cost = $request->input('cost'); // Required field, no default needed
+        $product->category_id = $request->input('category_id'); // Fixed field name
+        $product->description = $request->input('description');
+        $product->enabled = $request->has('enabled'); // Handle checkbox correctly
+
+        // Handle image upload
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $product->image = base64_encode(file_get_contents($image->getRealPath()));
+
+            // Validate image file
+            if ($image->isValid()) {
+                $product->image = base64_encode(file_get_contents($image->getRealPath()));
+                Log::info('Image processed successfully', [
+                    'original_name' => $image->getClientOriginalName(),
+                    'size' => $image->getSize()
+                ]);
+            } else {
+                throw new \Exception('Invalid image file uploaded');
+            }
+        } else {
+            throw new \Exception('No image file found in request');
         }
-    
-        $product->quantity = $request->quantity;
-        $product->price = $request->price;
-        $product->cost = $request->cost;
-        $product->category_id = $request->category;
-        $product->description = $request->description;
-        $product->enabled = $request->enabled;
-        $product->save();
-    
+
+        $result = $product->save();
+
+        Log::info('Product saved successfully', [
+            'result' => $result,
+            'product_id' => $product->id,
+            'product_data' => $product->toArray()
+        ]);
+
         return redirect()->route('admin.products')->with('success', 'Product added successfully!');
+
+    } catch (\Exception $e) {
+        Log::error('Product store error:', [
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return redirect()->back()
+            ->withInput()
+            ->with('error', 'Failed to add product: ' . $e->getMessage());
     }
-    
-    
+}
+
+
 
     /**
      * Display the specified resource.
@@ -173,9 +221,9 @@ public function adminview()
         $products=Product::all();
         $category = Category::select('id', 'name')->get();
     $categoryMap = $category->pluck('name', 'id');
-        
-       
-    
+
+
+
         return view('productdetails',['products'=>$products,'product'=>$singleproduct,'category'=>$category,'categoryMap' => $categoryMap,]);
     }
 
@@ -186,7 +234,7 @@ public function adminview()
     {
         $product=Product::findOrFail($id);
         $categories=Category::all();
-      
+
 
         return view('admin.products.editproduct',['product'=>$product,'categories'=>$categories]);
     }
@@ -196,39 +244,44 @@ public function adminview()
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image',
-            'quantity' => 'required|integer',
-            'price' => 'required|numeric',
-            'cost' => 'required|numeric',
-            'category' => 'required|integer|exists:categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'quantity' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
+            'cost' => 'required|numeric|min:0',
+            'category_id' => 'required|integer|exists:categories,id',
             'description' => 'required|string',
-            'enabled' => 'required|boolean',
+            'enabled' => 'boolean',
         ]);
-    
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput()
+                ->with('error', 'Please fix the validation errors below.');
+        }
+
         $product = Product::findOrFail($id);
-        
+
         $product->name = $request->name;
-        
+
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $product->image = base64_encode(file_get_contents($image->getRealPath()));
-        } else {
-            $product-> image = $product->image; // Keep the existing image
         }
-    
+
         $product->quantity = $request->quantity;
         $product->price = $request->price;
-        $product->cost = $request->cost;
-        $product->category_id = $request->category;
+        $product->cost = $request->input('cost');
+        $product->category_id = $request->category_id;
         $product->description = $request->description;
-        $product->enabled = $request->enabled;
+        $product->enabled = $request->has('enabled');
         $product->save();
-    
+
         return redirect()->route('admin.products')->with('success', 'Product updated successfully!');
     }
-    
+
 
     /**
      * Remove the specified resource from storage.
@@ -238,6 +291,6 @@ public function adminview()
         $product= Product::findOrFail($id);
         $product->delete();
 
-        return redirect()->route('admin.products')->with('success', 'Category deleted successfully.');
+        return redirect()->route('admin.products')->with('success', 'Product deleted successfully.');
     }
 }
