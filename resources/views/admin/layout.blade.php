@@ -42,11 +42,7 @@
                     </svg>
                     <span>Orders</span>
                 </a>
-                @if (
-    Auth::check() && 
-    (\App\Models\Admin::where('user_id', Auth::id())->exists() || 
-    \App\Models\SuperAdmin::where('user_id', Auth::id())->exists())
-)
+                @if (Auth::check() && \App\Models\SuperAdmin::where('user_id', Auth::id())->exists())
                 <a href="{{ route('admin.revenue') }}" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
@@ -100,13 +96,13 @@
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('w-64');
             sidebar.classList.toggle('w-20');
-            
+
             // Toggle text visibility
             const spans = sidebar.getElementsByTagName('span');
             for (let span of spans) {
                 span.classList.toggle('hidden');
             }
-            
+
             // Adjust icon margins
             const icons = sidebar.getElementsByTagName('svg');
             for (let icon of icons) {

@@ -30,24 +30,22 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/checkout/place-order', [OrderController::class, 'placeOrder'])->name('placeOrder');
 });
 
-//Admin Routes :
+//Admin Routes - accessible by both regular admins and super admins:
 Route::middleware([SuperAdminMiddleware::class])->prefix('admin')->group(function () {
     // Routes for Dashboard
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/revenue', [AdminController::class, 'showMetrics'])->name('admin.revenue');
 
     // Routes for Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('admin.orders');
     Route::get('/orders/details/{id}', [OrderController::class, 'showOrder'])->name('admin.orders.details');
     Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.updateStatus');
 
-    // Routes for Products - FIXED
+    // Routes for Products
     Route::get('/products', [ProductController::class, 'adminview'])->name('admin.products');
     Route::get('/addproduct', [ProductController::class, 'create'])->name('admin.addproduct');
     Route::post('/addproduct', [ProductController::class, 'store'])->name('admin.addproduct.store');
     Route::get('/editproduct/{id}', [ProductController::class, 'edit'])->name('admin.editproduct');
     Route::put('/editproduct/{id}', [ProductController::class, 'update'])->name('admin.updateproduct');
-    // FIXED: Changed from CategoryController to ProductController
     Route::delete('/products/delete/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
 
     // Routes for Categories
@@ -58,6 +56,9 @@ Route::middleware([SuperAdminMiddleware::class])->prefix('admin')->group(functio
     Route::put('/categories/editcategory/{id}', [CategoryController::class, 'update'])->name('admin.categories.update');
     Route::delete('/categories/delete/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     Route::get('/categories/checkProducts/{id}', [CategoryController::class, 'checkProducts'])->name('admin.categories.checkProducts');
+
+    // Super Admin Only Routes - already protected by SuperAdminMiddleware's internal route check
+    Route::get('/revenue', [AdminController::class, 'showMetrics'])->name('admin.revenue');
 });
 
 // Breeze Routes:

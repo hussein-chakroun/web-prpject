@@ -6,8 +6,7 @@
     <div class="text-center mb-12">
         <h2 class="text-3xl font-bold text-gray-800 mb-4">Our Product Categories</h2>
         <p class="text-gray-600 max-w-2xl mx-auto">
-            Discover a world of cutting-edge technology and smart solutions across laptops, smartphones, gaming consoles, home appliances, and more – designed to elevate your digital lifestyle.
-        </p>
+            Discover beautiful paintings of revered Shia figures including Imam Ali, Imam Hussein, and Sayed Hassan. Each piece is crafted with devotion and spiritual significance.        </p>
     </div>
 
     <!-- Categories Grid -->
@@ -16,8 +15,8 @@
             <a href="{{ route('products.index', ['category' => $item->id]) }}" class="group">
                 <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-full">
                     <div class="relative overflow-hidden rounded-t-lg">
-                        <img src="data:image/jpeg;base64,{{ $item->image }}" 
-                            alt="{{ $item->name }}" 
+                        <img src="data:image/jpeg;base64,{{ $item->image }}"
+                            alt="{{ $item->name }}"
                             class="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-300">
                     </div>
                     <div class="p-6">

@@ -16,12 +16,12 @@ class AdminController extends Controller
     public function showMetrics(Request $request)
 {
     // Filter by date range (optional)
-    $startDate = $request->input('start_date') 
-        ? Carbon::parse($request->input('start_date')) 
+    $startDate = $request->input('start_date')
+        ? Carbon::parse($request->input('start_date'))
         : Carbon::now()->startOfMonth();
 
-    $endDate = $request->input('end_date') 
-        ? Carbon::parse($request->input('end_date')) 
+    $endDate = $request->input('end_date')
+        ? Carbon::parse($request->input('end_date'))
         : Carbon::now()->endOfMonth();
 
     // Revenue and Profit (Delivered Orders)
